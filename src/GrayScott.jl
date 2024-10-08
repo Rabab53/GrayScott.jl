@@ -5,28 +5,21 @@ a regular Cartesian mesh.
 
 The bp output files can be visualized with ParaView.
 """
+
 module GrayScott
 
-import MPI, ADIOS2
+import MPI #, ADIOS2
 
-# contains relevant data containers "structs" for Input, Domain and Fields
-include(joinpath("simulation", "Structs.jl"))
+using KernelAbstractions #, OffsetArrays
 
-# contains helper functions for general use
-include(joinpath("helper", "Helper.jl"))
-import .Helper
-
-# initializes inputs from configuration file
-include(joinpath("simulation", "Inputs.jl"))
-import .Inputs
 
 # manages the simulation computation
 include(joinpath("simulation", "Simulation.jl"))
 import .Simulation
 
 # manages the I/O
-include(joinpath("simulation", "IO.jl"))
-import .IO
+#include(joinpath("simulation", "IO.jl"))
+#import .IO
 
 function julia_main()::Cint
     try
@@ -38,26 +31,12 @@ function julia_main()::Cint
     return 0
 end
 
-function main(args::Vector{String})::Int32
-    MPI.Init()
-    comm = MPI.COMM_WORLD
-    rank = MPI.Comm_rank(comm)
-    size = MPI.Comm_size(comm)
+function main(args::Vector{String})
 
-    # a data struct that holds settings data from config_file in args
-    # example config file: ../examples/settings-files.json
-    settings = Inputs.get_settings(args, comm)
-
-    # initialize MPI Cartesian Domain and Communicator
-    mpi_cart_domain = Simulation.init_domain(settings, comm)
-
-    # initialize fields
-    fields = Simulation.init_fields(settings,
-                                    mpi_cart_domain,
-                                    Helper.get_type(settings.precision))
+    comm, settings, mpi_cart_domain, fields = Simulation.Initialization(args)
 
     # initialize IOStream struct holding ADIOS-2 components for parallel I/O
-    stream = IO.init(settings, mpi_cart_domain, fields)
+    #stream = IO.init(settings, mpi_cart_domain, fields)
 
     restart_step::Int32 = 0
     # @TODO: checkpoint-restart 
@@ -73,19 +52,15 @@ function main(args::Vector{String})::Int32
                         step / settings.plotgap)
             end
 
-            IO.write_step!(stream, step, fields)
+           # IO.write_step!(stream, step, fields)
         end
     end
 
-    IO.close!(stream)
+   #IO.close!(stream)
 
-    # Debugging session or Julia REPL session, not needed overall as it would be 
-    # called when the program ends
-    if !isinteractive()
-        MPI.Finalize()
-    end
+   Simulation.finalize()
 
-    return 0
+
 end
 
 end # module GrayScott
