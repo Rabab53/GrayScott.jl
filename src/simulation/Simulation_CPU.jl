@@ -11,20 +11,6 @@ function _init_fields_cpu(settings::Settings,
     u_temp = zeros(T, size_x + 2, size_y + 2, size_z + 2)
     v_temp = zeros(T, size_x + 2, size_y + 2, size_z + 2)
 
-    function is_inside(x, y, z, offsets, sizes)::Bool
-        if x < offsets[1] || x >= offsets[1] + sizes[1]
-            return false
-        end
-        if y < offsets[2] || y >= offsets[2] + sizes[2]
-            return false
-        end
-        if z < offsets[3] || z >= offsets[3] + sizes[3]
-            return false
-        end
-
-        return true
-    end
-
     d::Int64 = 6
 
     # global locations

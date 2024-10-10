@@ -33,8 +33,9 @@ end
 
 function main(args::Vector{String})
 
-    comm, settings, mpi_cart_domain, fields = Simulation.Initialization(args)
-
+    comm, settings, mpi_cart_domain, fields = Simulation.initialization(args)
+    rank = MPI.Comm_rank(comm)
+    
     # initialize IOStream struct holding ADIOS-2 components for parallel I/O
     #stream = IO.init(settings, mpi_cart_domain, fields)
 

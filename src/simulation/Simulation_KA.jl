@@ -75,19 +75,7 @@ function iterate!(fields::Fields{T, N, <:ArrayKA{T, N}},
     fields.v, fields.v_temp = fields.v_temp, fields.v
 end
 
-function is_inside(x, y, z, offsets, sizes)::Bool
-    if x < offsets[1] || x >= offsets[1] + sizes[1]
-        return false
-    end
-    if y < offsets[2] || y >= offsets[2] + sizes[2]
-        return false
-    end
-    if z < offsets[3] || z >= offsets[3] + sizes[3]
-        return false
-    end
 
-    return true
-end
 
 @kernel function _populate_cuda_kernel!(u, v, offsets, sizes, minL, maxL)
 

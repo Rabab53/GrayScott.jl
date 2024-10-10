@@ -1,4 +1,3 @@
-
 import CUDA
 
 function _init_fields_cuda(settings::Settings, mcd::MPICartDomain,
@@ -50,19 +49,6 @@ function iterate!(fields::Fields{T, N, <:CUDA.CuArray{T, N}},
 end
 
 function _populate_cuda!(u, v, offsets, sizes, minL, maxL)
-    function is_inside(x, y, z, offsets, sizes)::Bool
-        if x < offsets[1] || x >= offsets[1] + sizes[1]
-            return false
-        end
-        if y < offsets[2] || y >= offsets[2] + sizes[2]
-            return false
-        end
-        if z < offsets[3] || z >= offsets[3] + sizes[3]
-            return false
-        end
-
-        return true
-    end
 
     # local coordinates (this are 1-index already)
     lz = (CUDA.blockIdx().x - Int32(1)) * CUDA.blockDim().x +

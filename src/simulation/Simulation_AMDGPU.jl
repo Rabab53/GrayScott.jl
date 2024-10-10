@@ -52,19 +52,6 @@ function iterate!(fields::Fields{T, N, <:AMDGPU.ROCArray{T, N}},
 end
 
 function _populate_amdgpu!(u, v, offsets, sizes, minL, maxL)
-    function is_inside(x, y, z, offsets, sizes)::Bool
-        if x < offsets[1] || x >= offsets[1] + sizes[1]
-            return false
-        end
-        if y < offsets[2] || y >= offsets[2] + sizes[2]
-            return false
-        end
-        if z < offsets[3] || z >= offsets[3] + sizes[3]
-            return false
-        end
-
-        return true
-    end
 
     # local coordinates (this are 1-index already)
     lz = (AMDGPU.workgroupIdx().x - Int32(1)) * AMDGPU.workgroupDim().x +

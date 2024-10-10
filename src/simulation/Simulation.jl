@@ -9,19 +9,20 @@ export init_domain, init_fields
 import MPI
 import Distributions
 
-# from parent module
-import ..Settings, ..MPICartDomain, ..Fields
+# contains relevant data containers "structs" for Input, Domain and Fields
+include("Structs.jl")
+import .Settings, .MPICartDomain, .Fields
+
+# contains helper functions for general use
+include("../helper/Helper.jl")
+import .Helper
 
 # initializes inputs from configuration file
 include("Inputs.jl")
 import .Inputs
 
-# contains relevant data containers "structs" for Input, Domain and Fields
-include("Structs.jl")
+include("Common.jl")
 
-# contains helper functions for general use
-include("../helper/Helper.jl")
-import .Helper
 
 # include functions for CPU multithreading
 include("Simulation_CPU.jl")
@@ -199,15 +200,5 @@ function _exchange!(fields, mcd)
     end
 end
 
-"""
-   7-point stencil around the cell, 
-   this is equally a host and a device function!
-"""
-function _laplacian(i, j, k, var)
-    @inbounds l = var[i - 1, j, k] + var[i + 1, j, k] + var[i, j - 1, k] +
-                  var[i, j + 1, k] + var[i, j, k - 1] + var[i, j, k + 1] -
-                  6.0 * var[i, j, k]
-    return l / 6.0
-end
 
 end # module 
