@@ -1,10 +1,14 @@
 
 import MPI
+import GrayScott
 
 # Run all lightweight unit tests within a single MPI session
 MPI.Init()
 
 verbose = false
+
+root_dir = dirname(dirname(pathof(GrayScott)))
+config_file = joinpath(root_dir, "examples", "settings-files.json")
 
 # unit tests for module GrayScott 
 include(joinpath("unit", "helper", "unit-helperMPI.jl"))

@@ -3,7 +3,7 @@ import Test: @testset, @test, @test_throws
 # import submodule
 import GrayScott: Simulation
 # import types
-import GrayScott: Settings, MPICartDomain, Fields
+import .Simulation: Settings, MPICartDomain, Fields
 
 # Unfortunately due to MPI being a Singleton, single MPI.Init()
 # these unit tests don't run as independent files

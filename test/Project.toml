@@ -1,3 +1,5 @@
 [deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
