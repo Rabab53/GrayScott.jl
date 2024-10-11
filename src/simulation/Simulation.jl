@@ -38,7 +38,7 @@ function initialization(args::Vector{String})
     comm = MPI.COMM_WORLD
 
     # a data struct that holds settings data from config_file in args
-    # example config file: ../examples/settings-files.json
+    # example config file: ../examples/settings-files.toml
     settings = Inputs.get_settings(args, comm)
 
     # initialize MPI Cartesian Domain and Communicator
