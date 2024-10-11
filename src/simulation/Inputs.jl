@@ -8,7 +8,6 @@ export get_settings
 import ArgParse
 import TOML
 
-import ..Helper
 # import directly from parent module (GrayScott)
 import ..Settings, ..SettingsKeys
 
@@ -22,7 +21,7 @@ function get_settings(args::Vector{String}, comm)::Settings
         throw(ArgumentError("config file must be in TOML format. Extension not recognized: $ext\n"))
     end
 
-    config_file_contents::String = Helper.bcast_file_contents(config_file, comm)
+    config_file_contents = String(read(open(config_file, "r")))
 
     return _parse_settings_toml(config_file_contents)
 end

@@ -13,10 +13,6 @@ import Distributions
 include("Structs.jl")
 import .Settings, .MPICartDomain, .Fields
 
-# contains helper functions for general use
-include("../helper/Helper.jl")
-import .Helper
-
 # initializes inputs from configuration file
 include("Inputs.jl")
 import .Inputs
@@ -44,10 +40,11 @@ function initialization(args::Vector{String})
     # initialize MPI Cartesian Domain and Communicator
     mpi_cart_domain = init_domain(settings, comm)
 
+    # Convert from the precision string to the actual type (e.g. "Float32" -> Float32)
+    T = eval(Symbol(settings.precision))::Type
+
     # initialize fields
-    fields = init_fields(settings,
-                        mpi_cart_domain,
-                        Helper.get_type(settings.precision))
+    fields = init_fields(settings, mpi_cart_domain, T)
 
     return comm, settings, mpi_cart_domain, fields
 

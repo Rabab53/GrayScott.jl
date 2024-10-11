@@ -11,8 +11,6 @@ root_dir = dirname(dirname(pathof(GrayScott)))
 config_file = joinpath(root_dir, "examples", "settings-files.toml")
 
 # unit tests for module GrayScott 
-include(joinpath("unit", "helper", "unit-helperMPI.jl"))
-
 include(joinpath("unit", "simulation", "unit-Inputs.jl"))
 include(joinpath("unit", "simulation", "unit-Simulation.jl"))
 include(joinpath("unit", "simulation", "unit-Simulation_CUDA.jl"))
