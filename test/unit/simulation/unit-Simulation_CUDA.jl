@@ -3,7 +3,9 @@ import Test: @testset, @test, @test_throws
 # import submodule
 import GrayScott: Simulation
 # import types
-import GrayScott: Settings, MPICartDomain, Fields
+import .Simulation: Settings, MPICartDomain, Fields
+
+using CUDA
 
 @testset "unit-Simulation.init_fields-cuda" begin
     function test_init_cuda(L)
@@ -20,9 +22,11 @@ import GrayScott: Settings, MPICartDomain, Fields
         @test fields.v ≈ Array(fields_cuda.v)
     end
 
-    test_init_cuda(8)
-    test_init_cuda(16)
-    test_init_cuda(32)
-    test_init_cuda(64)
-    test_init_cuda(128)
+    if CUDA.functional()
+        test_init_cuda(8)
+        test_init_cuda(16)
+        test_init_cuda(32)
+        test_init_cuda(64)
+        test_init_cuda(128)
+    end
 end
