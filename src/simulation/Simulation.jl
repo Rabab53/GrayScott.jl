@@ -23,7 +23,6 @@ import .Inputs
 
 include("Common.jl")
 
-
 # include functions for CPU multithreading
 include("Simulation_CPU.jl")
 # include functions for NVIDIA GPUs using CUDA.jl
