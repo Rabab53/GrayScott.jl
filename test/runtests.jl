@@ -8,7 +8,7 @@ MPI.Init()
 verbose = false
 
 root_dir = dirname(dirname(pathof(GrayScott)))
-config_file = joinpath(root_dir, "examples", "settings-files.json")
+config_file = joinpath(root_dir, "examples", "settings-files.toml")
 
 # unit tests for module GrayScott 
 include(joinpath("unit", "helper", "unit-helperMPI.jl"))
