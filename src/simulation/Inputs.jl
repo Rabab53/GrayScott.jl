@@ -1,15 +1,13 @@
-
 """
-Submodule used by GrayScott to handle inputs 
+Submodule used by GrayScott to handle inputs
 """
 module Inputs
 
 export get_settings
 
 import ArgParse
-import JSON
+import TOML
 
-import ..Helper
 # import directly from parent module (GrayScott)
 import ..Settings, ..SettingsKeys
 
@@ -18,18 +16,14 @@ function get_settings(args::Vector{String}, comm)::Settings
     config_file = _parse_args(args)
 
     # check format extension
-    if !endswith(config_file, ".json") &&
-       !(endswith(config_file, ".yaml") || endswith(config_file, ".yml"))
-        throw(ArgumentError("config file must be json, yaml format. Extension not recognized.\n"))
+    if !endswith(config_file, ".toml")
+        ext = split(config_file, ".")[end]
+        throw(ArgumentError("config file must be in TOML format. Extension not recognized: $ext\n"))
     end
 
-    config_file_contents::String = Helper.bcast_file_contents(config_file, comm)
+    config_file_contents = String(read(open(config_file, "r")))
 
-    if endswith(config_file, ".json")
-        return _parse_settings_json(config_file_contents)
-    end
-
-    return nothing
+    return _parse_settings_toml(config_file_contents)
 end
 
 # local scope functions
@@ -60,12 +54,12 @@ function _parse_args(args::Vector{String};
     return config_file
 end
 
-function _parse_settings_json(json_contents::String)::Settings
-    json = JSON.parse(json_contents)
+function _parse_settings_toml(toml_contents::String)::Settings
+    config_dict = TOML.parse(toml_contents)
     settings = Settings()
 
     # Iterate through dictionary pairs
-    for (key, value) in json
+    for (key, value) in config_dict
         # Iterate through predefined keys, else ignore (no error if unrecognized)
         if key in SettingsKeys
             setproperty!(settings, Symbol(key), value)

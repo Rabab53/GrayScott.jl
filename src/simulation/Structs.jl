@@ -1,6 +1,5 @@
-
 """
-Settings carry the settings from the simulation config file (json or yaml formats)
+Settings carry the settings from the simulation config file (TOML format)
 
 Using Base.@kwdef macro for easy defaults and enable keyword arguments
 Settings(Du = 0.2, noise = 0.2) 

@@ -13,16 +13,11 @@ import Distributions
 include("Structs.jl")
 import .Settings, .MPICartDomain, .Fields
 
-# contains helper functions for general use
-include("../helper/Helper.jl")
-import .Helper
-
 # initializes inputs from configuration file
 include("Inputs.jl")
 import .Inputs
 
 include("Common.jl")
-
 
 # include functions for CPU multithreading
 include("Simulation_CPU.jl")

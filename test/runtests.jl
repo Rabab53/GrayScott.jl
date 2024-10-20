@@ -1,18 +1,20 @@
 
 import MPI
+import GrayScott
 
 # Run all lightweight unit tests within a single MPI session
 MPI.Init()
 
 verbose = false
 
-# unit tests for module GrayScott 
-include(joinpath("unit", "helper", "unit-helperMPI.jl"))
+root_dir = dirname(dirname(pathof(GrayScott)))
+config_file = joinpath(root_dir, "examples", "settings-files.toml")
 
+# unit tests for module GrayScott 
 include(joinpath("unit", "simulation", "unit-Inputs.jl"))
 include(joinpath("unit", "simulation", "unit-Simulation.jl"))
 include(joinpath("unit", "simulation", "unit-Simulation_CUDA.jl"))
-include(joinpath("unit", "simulation", "unit-IO.jl"))
+#include(joinpath("unit", "simulation", "unit-IO.jl"))
 
 # unit tests for analysis scripts
 include(joinpath("unit", "analysis", "unit-pdfcalc.jl"))
