@@ -11,7 +11,7 @@ import GrayScott: Settings, MPICartDomain, Fields
 @testset "unit-IO.init" begin
     settings = Settings()
     mpi_cart_domain = MPICartDomain()
-    fields = Simulation.init_fields(settings, mpi_cart_domain, Float32)
+    fields = Simulation.Init_Fields(settings, mpi_cart_domain, Float32)
 
     @test eltype(fields.u) == Float32
     @test eltype(fields.v) == Float32
@@ -28,8 +28,8 @@ end
 @testset "unit-IO.write" begin
     settings = Settings()
     settings.L = 6
-    mpi_cart_domain = Simulation.init_domain(settings, MPI.COMM_WORLD)
-    fields = Simulation.init_fields(settings, mpi_cart_domain, Float32)
+    mpi_cart_domain = Simulation.Init_Domain(settings, MPI.COMM_WORLD)
+    fields = Simulation.Init_Fields(settings, mpi_cart_domain, Float32)
     stream = IO.init(settings, mpi_cart_domain, fields)
     IO.write_step!(stream, Int32(0), fields)
     IO.close!(stream)

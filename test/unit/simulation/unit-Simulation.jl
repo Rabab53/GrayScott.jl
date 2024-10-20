@@ -10,8 +10,8 @@ import GrayScott: Settings, MPICartDomain, Fields
 
 @testset "unit-Simulation.init" begin
     settings = Settings()
-    mpi_cart_domain = Simulation.init_domain(settings, MPI.COMM_WORLD)
-    fields = Simulation.init_fields(settings, mpi_cart_domain, Float32)
+    mpi_cart_domain = Simulation.Init_Domain(settings, MPI.COMM_WORLD)
+    fields = Simulation.Init_Fields(settings, mpi_cart_domain, Float32)
 
     @test typeof(fields) == Fields{Float32, 3, Array{Float32, 3}}
 end
@@ -19,10 +19,10 @@ end
 @testset "unit-Simulation.iterate" begin
     settings = Settings()
     settings.L = 2
-    mpi_cart_domain = Simulation.init_domain(settings, MPI.COMM_WORLD)
-    fields = Simulation.init_fields(settings, mpi_cart_domain, Float32)
+    mpi_cart_domain = Simulation.Init_Domain(settings, MPI.COMM_WORLD)
+    fields = Simulation.Init_Fields(settings, mpi_cart_domain, Float32)
 
-    Simulation.iterate!(fields, settings, mpi_cart_domain)
+    Simulation.Iterate!(fields, settings, mpi_cart_domain)
 
     if verbose
         sleep(0.01)
