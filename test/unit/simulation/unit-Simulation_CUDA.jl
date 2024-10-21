@@ -7,16 +7,16 @@ import .Simulation: Settings, MPICartDomain, Fields
 
 using CUDA
 
-@testset "unit-Simulation.Init_Fields-cuda" begin
+@testset "unit-Simulation.init_fields-cuda" begin
     function test_init_cuda(L)
         settings = Settings()
         settings.L = L
-        mpi_cart_domain = Simulation.Init_Domain(settings, MPI.COMM_WORLD)
+        mpi_cart_domain = Simulation.init_domain(settings, MPI.COMM_WORLD)
 
-        fields = Simulation.Init_Fields(settings, mpi_cart_domain, Float32)
+        fields = Simulation.init_fields(settings, mpi_cart_domain, Float32)
 
         settings.backend = "CUDA"
-        fields_cuda = Simulation.Init_Fields(settings, mpi_cart_domain, Float32)
+        fields_cuda = Simulation.init_fields(settings, mpi_cart_domain, Float32)
 
         @test fields.u ≈ Array(fields_cuda.u)
         @test fields.v ≈ Array(fields_cuda.v)

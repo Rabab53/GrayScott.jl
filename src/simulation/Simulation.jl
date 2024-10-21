@@ -4,7 +4,7 @@ CUDA.jl, AMDGPU.jl, and KernelAbstractions.jl
 """
 module Simulation
 
-export Init_Domain, Init_Fields
+export init_domain, init_fields
 
 import MPI
 import Distributions
@@ -28,6 +28,7 @@ include("Simulation_CPU.jl")
 # include functions for all GPUs using KernelAbstractions.jl
 include("Simulation_KA.jl")
 
+# include functions for MPI communication
 include("communication.jl")
 
 end # module

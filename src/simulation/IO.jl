@@ -45,7 +45,7 @@ end
 function write_step!(stream::IOStream, step::Int32, fields::Fields{T}) where {T}
 
     # this creates temporaries similar to Fortran
-    u_no_ghost, v_no_ghost = Simulation.Get_Fields(fields)
+    u_no_ghost, v_no_ghost = Simulation.get_fields(fields)
 
     # writer engine
     w = stream.engine
@@ -59,7 +59,7 @@ end
 
 function close!(stream::IOStream)
     ADIOS2.close(stream.engine)
-    ADIOS2.adios_Finalize(stream.adios)
+    ADIOS2.adios_finalize(stream.adios)
 end
 
 function _add_visualization_schemas(io, length)

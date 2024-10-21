@@ -1,7 +1,7 @@
 
 import AMDGPU
 
-function Init_Fields_AMDGPU(settings::Settings, mcd::MPICartDomain,
+function init_fields_AMDGPU(settings::Settings, mcd::MPICartDomain,
                              T)::Fields{T, 3, <:AMDGPU.ROCArray{T, 3}}
     size_x = mcd.proc_sizes[1]
     size_y = mcd.proc_sizes[2]
@@ -26,32 +26,32 @@ function Init_Fields_AMDGPU(settings::Settings, mcd::MPICartDomain,
     # grid size must be the total number of threads of each direction
     grid = (settings.L, settings.L)
 
-    AMDGPU.wait(AMDGPU.@roc groupsize=threads gridsize=grid Populate_AMDGPU!(u,
+    AMDGPU.wait(AMDGPU.@roc groupsize=threads gridsize=grid populate_AMDGPU!(u,
                                                                               v,
                                                                               roc_offsets,
                                                                               roc_sizes,
                                                                               minL,
                                                                               maxL))
 
-    xy_face_t, xz_face_t, yz_face_t = Get_MPI_Faces(size_x, size_y, size_z, T)
+    xy_face_t, xz_face_t, yz_face_t = get_MPI_faces(size_x, size_y, size_z, T)
 
     fields = Fields(u, v, u_temp, v_temp, xy_face_t, xz_face_t, yz_face_t)
     return fields
 end
 
-function Iterate!(fields::Fields{T, N, <:AMDGPU.ROCArray{T, N}},
+function iterate!(fields::Fields{T, N, <:AMDGPU.ROCArray{T, N}},
                   settings::Settings,
                   mcd::MPICartDomain) where {T, N}
-    Exchange!(fields, mcd)
+    exchange!(fields, mcd)
     # this function is the bottleneck
-    Calculate!(fields, settings, mcd)
+    calculate!(fields, settings, mcd)
 
     # swap the names
     fields.u, fields.u_temp = fields.u_temp, fields.u
     fields.v, fields.v_temp = fields.v_temp, fields.v
 end
 
-function Populate_AMDGPU!(u, v, offsets, sizes, minL, maxL)
+function populate_AMDGPU!(u, v, offsets, sizes, minL, maxL)
 
     # local coordinates (this are 1-index already)
     lz = (AMDGPU.workgroupIdx().x - Int32(1)) * AMDGPU.workgroupDim().x +
@@ -70,8 +70,8 @@ function Populate_AMDGPU!(u, v, offsets, sizes, minL, maxL)
             xoff = offsets[1]
 
             for x in minL:maxL
-                # check if global coordinates for Initialization are inside the region
-                if !Is_Inside(x, y, z, offsets, sizes)
+                # check if global coordinates for initialization are inside the region
+                if !is_inside(x, y, z, offsets, sizes)
                     continue
                 end
 
@@ -83,7 +83,7 @@ function Populate_AMDGPU!(u, v, offsets, sizes, minL, maxL)
     end
 end
 
-function Calculate!(fields::Fields{T, N, <:AMDGPU.ROCArray{T, N}},
+function calculate!(fields::Fields{T, N, <:AMDGPU.ROCArray{T, N}},
                      settings::Settings,
                      mcd::MPICartDomain) where {T, N}
     Du = convert(T, settings.Du)
@@ -98,7 +98,7 @@ function Calculate!(fields::Fields{T, N, <:AMDGPU.ROCArray{T, N}},
     threads = (16, 16)
     blocks = (settings.L, settings.L)
 
-    AMDGPU.wait(AMDGPU.@roc groupsize=threads gridsize=grid Calculte_Kernel_AMDGPU!(fields.u,
+    AMDGPU.wait(AMDGPU.@roc groupsize=threads gridsize=grid calculate_kernel_AMDGPU!(fields.u,
                                                                                      fields.v,
                                                                                      fields.u_temp,
                                                                                      fields.v_temp,
@@ -111,7 +111,7 @@ function Calculate!(fields::Fields{T, N, <:AMDGPU.ROCArray{T, N}},
                                                                                      dt))
 end
 
-function Calculte_Kernel_AMDGPU!(u, v, u_temp, v_temp, sizes, Du, Dv, F, K,
+function calculate_kernel_AMDGPU!(u, v, u_temp, v_temp, sizes, Du, Dv, F, K,
                                   noise, dt)
 
     # local coordinates (this are 1-index already)
@@ -127,13 +127,13 @@ function Calculte_Kernel_AMDGPU!(u, v, u_temp, v_temp, sizes, Du, Dv, F, K,
             u_ijk = u[i, j, k]
             v_ijk = v[i, j, k]
 
-            du = Du * Laplacian(i, j, k, u) - u_ijk * v_ijk^2 +
+            du = Du * laplacian(i, j, k, u) - u_ijk * v_ijk^2 +
                  F * (1.0 - u_ijk)
             # + noise * AMDGPU.rand(eltype(u))
             # WIP in AMDGPU.jl, works with CUDA.jl
             # + rand(Distributions.Uniform(-1, 1))
 
-            dv = Dv * Laplacian(i, j, k, v) + u_ijk * v_ijk^2 -
+            dv = Dv * laplacian(i, j, k, v) + u_ijk * v_ijk^2 -
                  (F + K) * v_ijk
 
             # advance the next step
@@ -143,7 +143,7 @@ function Calculte_Kernel_AMDGPU!(u, v, u_temp, v_temp, sizes, Du, Dv, F, K,
     end
 end
 
-function Get_Fields(fields::Fields{T, N, <:AMDGPU.ROCArray{T, N}}) where {T, N}
+function get_fields(fields::Fields{T, N, <:AMDGPU.ROCArray{T, N}}) where {T, N}
     u = Array(fields.u)
     u_no_ghost = u[(begin + 1):(end - 1), (begin + 1):(end - 1),
                    (begin + 1):(end - 1)]

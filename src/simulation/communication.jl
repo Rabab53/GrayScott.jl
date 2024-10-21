@@ -1,4 +1,4 @@
-function Initialization(args::Vector{String})
+function initialization(args::Vector{String})
 
     MPI.Init()
     comm = MPI.COMM_WORLD
@@ -8,26 +8,26 @@ function Initialization(args::Vector{String})
     settings = Inputs.get_settings(args, comm)
 
     # initialize MPI Cartesian Domain and Communicator
-    mpi_cart_domain = Init_Domain(settings, comm)
+    mpi_cart_domain = init_domain(settings, comm)
 
     # initialize fields
-    fields = Init_Fields(settings,
-                        mpi_cart_domain,
-                        Helper.get_type(settings.precision))
+    fields = init_fields(settings,
+                         mpi_cart_domain,
+                         Helper.get_type(settings.precision))
 
     return comm, settings, mpi_cart_domain, fields
 
 end
 
-function Finalize()
-        # Debugging session or Julia REPL session, not needed overall as it would be 
+function finalize()
+    # Debugging session or Julia REPL session, not needed overall as it would be 
     # called when the program ends
     if !isinteractive()
         MPI.Finalize()
     end
 end
 
-function Init_Domain(settings::Settings, comm::MPI.Comm)::MPICartDomain
+function init_domain(settings::Settings, comm::MPI.Comm)::MPICartDomain
     mcd = MPICartDomain()
 
     # set dims and Cartesian communicator
@@ -69,19 +69,19 @@ end
 Create and Initialize fields for either CPU, CUDA.jl, AMDGPU.jl backends
 Multiple dispatch would direct to the appropriate overleaded function
 """
-function Init_Fields(settings::Settings,
+function init_fields(settings::Settings,
                      mcd::MPICartDomain, T)::Fields{T}
     lowercase_backend = lowercase(settings.backend)
     if lowercase_backend == "cuda"
-        return Init_Fields_CUDA(settings, mcd, T)
+        return init_fields_CUDA(settings, mcd, T)
     elseif lowercase_backend == "amdgpu"
-        return Init_Fields_AMDGPU(settings, mcd, T)
+        return init_fields_AMDGPU(settings, mcd, T)
     end
     # everything else would trigger the CPU threads backend
-    return Init_Fields_CPU(settings, mcd, T)
+    return init_fields_CPU(settings, mcd, T)
 end
 
-function Get_MPI_Faces(size_x, size_y, size_z, T)
+function get_MPI_faces(size_x, size_y, size_z, T)
 
     ## create a new type taking: count, block length, stride
     ## to interoperate with MPI for ghost cell exchange
@@ -99,11 +99,11 @@ function Get_MPI_Faces(size_x, size_y, size_z, T)
     return xy_face_t, xz_face_t, yz_face_t
 end
 
-function Exchange!(fields, mcd)
+function exchange!(fields, mcd)
     """
     Send XY face z=size_z+1 to north and receive z=1 from south
     """
-    function Exchange_xy!(var, size_z, data_type, rank1, rank2, comm)
+    function exchange_xy!(var, size_z, data_type, rank1, rank2, comm)
         # to north
         send_buf = MPI.Buffer(@view(var[2, 1, size_z + 1]), 1, data_type)
         recv_buf = MPI.Buffer(@view(var[2, 1, 1]), 1, data_type)
@@ -118,7 +118,7 @@ function Exchange!(fields, mcd)
     """
     Send XZ face y=size_y+1 to up and receive y=1 from down
     """
-    function Exchange_xz!(var, size_y, data_type, rank1, rank2, comm)
+    function exchange_xz!(var, size_y, data_type, rank1, rank2, comm)
         # to up
         send_buf = MPI.Buffer(@view(var[2, size_y + 1, 2]), 1, data_type)
         recv_buf = MPI.Buffer(@view(var[2, 1, 2]), 1, data_type)
@@ -133,7 +133,7 @@ function Exchange!(fields, mcd)
     """
     Send YZ face x=size_x+2 to east and receive x=2 from west
     """
-    function Exchange_yz!(var, size_x, data_type, rank1, rank2, comm)
+    function exchange_yz!(var, size_x, data_type, rank1, rank2, comm)
         # to east
         send_buf = MPI.Buffer(@view(var[size_x + 1, 1, 1]), 1, data_type)
         recv_buf = MPI.Buffer(@view(var[1, 1, 1]), 1, data_type)
@@ -145,22 +145,22 @@ function Exchange!(fields, mcd)
         MPI.Sendrecv!(send_buf, recv_buf, comm, dest = rank2, source = rank1)
     end
 
-    # if already a CPU array, no need to copy, 
-    # otherwise (device) copy to host. 
+    # if already a CPU array, no need to copy,
+    # otherwise (device) copy to host.
     u = typeof(fields.u) <: Array ? fields.u : Array(fields.u)
     v = typeof(fields.v) <: Array ? fields.v : Array(fields.v)
 
     for var in [u, v]
-        Exchange_xy!(var, mcd.proc_sizes[3], fields.xy_face_t,
-                      mcd.proc_neighbors["north"], mcd.proc_neighbors["south"],
-                      mcd.cart_comm)
+        exchange_xy!(var, mcd.proc_sizes[3], fields.xy_face_t,
+                     mcd.proc_neighbors["north"], mcd.proc_neighbors["south"],
+                     mcd.cart_comm)
 
-        Exchange_xz!(var, mcd.proc_sizes[2], fields.xz_face_t,
-                      mcd.proc_neighbors["up"], mcd.proc_neighbors["down"],
-                      mcd.cart_comm)
+        exchange_xz!(var, mcd.proc_sizes[2], fields.xz_face_t,
+                     mcd.proc_neighbors["up"], mcd.proc_neighbors["down"],
+                     mcd.cart_comm)
 
-        Exchange_yz!(var, mcd.proc_sizes[1], fields.yz_face_t,
-                      mcd.proc_neighbors["east"], mcd.proc_neighbors["west"],
-                      mcd.cart_comm)
+        exchange_yz!(var, mcd.proc_sizes[1], fields.yz_face_t,
+                     mcd.proc_neighbors["east"], mcd.proc_neighbors["west"],
+                     mcd.cart_comm)
     end
 end
