@@ -2,7 +2,7 @@
    7-point stencil around the cell, 
    this is equally a host and a device function!
 """
-function Laplacian(i, j, k, var)
+function laplacian(i, j, k, var)
     @inbounds l = var[i - 1, j, k] + var[i + 1, j, k] + var[i, j - 1, k] +
                   var[i, j + 1, k] + var[i, j, k - 1] + var[i, j, k + 1] -
                   6.0 * var[i, j, k]
@@ -10,7 +10,7 @@ function Laplacian(i, j, k, var)
 end
 
 
-function Is_Inside(x, y, z, offsets, sizes)::Bool
+function is_inside(x, y, z, offsets, sizes)::Bool
     if x < offsets[1] || x >= offsets[1] + sizes[1]
         return false
     end

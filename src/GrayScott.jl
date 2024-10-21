@@ -33,7 +33,7 @@ end
 
 function main(args::Vector{String})
 
-    comm, settings, mpi_cart_domain, fields = Simulation.Initialization(args)
+    comm, settings, mpi_cart_domain, fields = Simulation.initialization(args)
     rank = MPI.Comm_rank(comm)
     
     # initialize IOStream struct holding ADIOS-2 components for parallel I/O
@@ -44,7 +44,7 @@ function main(args::Vector{String})
     step::Int32 = restart_step
 
     while step < settings.steps
-        Simulation.Iterate!(fields, settings, mpi_cart_domain)
+        Simulation.iterate!(fields, settings, mpi_cart_domain)
         step += 1
 
         if step % settings.plotgap == 0
@@ -59,7 +59,7 @@ function main(args::Vector{String})
 
    #IO.close!(stream)
 
-   Simulation.Finalize()
+   Simulation.finalize()
 
 
 end

@@ -1,5 +1,5 @@
-function Init_Fields_CPU(settings::Settings,
-                          mcd::MPICartDomain, T)::Fields{T}
+function init_fields_CPU(settings::Settings,
+                         mcd::MPICartDomain, T)::Fields{T}
     size_x = mcd.proc_sizes[1]
     size_y = mcd.proc_sizes[2]
     size_z = mcd.proc_sizes[3]
@@ -24,7 +24,7 @@ function Init_Fields_CPU(settings::Settings,
     Threads.@threads for z in minL:maxL
         for y in minL:maxL
             for x in minL:maxL
-                if !Is_Inside(x, y, z, mcd.proc_offsets, mcd.proc_sizes)
+                if !is_inside(x, y, z, mcd.proc_offsets, mcd.proc_sizes)
                     continue
                 end
 
@@ -35,24 +35,24 @@ function Init_Fields_CPU(settings::Settings,
         end
     end
 
-    xy_face_t, xz_face_t, yz_face_t = Get_MPI_Faces(size_x, size_y, size_z, T)
+    xy_face_t, xz_face_t, yz_face_t = get_MPI_faces(size_x, size_y, size_z, T)
 
     fields = Fields(u, v, u_temp, v_temp, xy_face_t, xz_face_t, yz_face_t)
     return fields
 end
 
-function Iterate!(fields::Fields{T, N, Array{T, N}}, settings::Settings,
+function iterate!(fields::Fields{T, N, Array{T, N}}, settings::Settings,
                   mcd::MPICartDomain) where {T, N}
-    Exchange!(fields, mcd)
+    exchange!(fields, mcd)
     # this function is the bottleneck
-    Calculate!(fields, settings, mcd)
+    calculate!(fields, settings, mcd)
 
     # swap the names
     fields.u, fields.u_temp = fields.u_temp, fields.u
     fields.v, fields.v_temp = fields.v_temp, fields.v
 end
 
-function Calculate!(fields::Fields{T, N, Array{T, N}}, settings::Settings,
+function calculate!(fields::Fields{T, N, Array{T, N}}, settings::Settings,
                      mcd::MPICartDomain) where {T, N}
     Du = convert(T, settings.Du)
     Dv = convert(T, settings.Dv)
@@ -71,11 +71,11 @@ function Calculate!(fields::Fields{T, N, Array{T, N}}, settings::Settings,
                 v = fields.v[i, j, k]
 
                 # introduce a random disturbance on du
-                du = Du * Laplacian(i, j, k, fields.u) - u * v^2 +
+                du = Du * laplacian(i, j, k, fields.u) - u * v^2 +
                      F * (1.0 - u) +
                      noise * rand(Distributions.Uniform(-1, 1))
 
-                dv = Dv * Laplacian(i, j, k, fields.v) + u * v^2 -
+                dv = Dv * laplacian(i, j, k, fields.v) + u * v^2 -
                      (F + K) * v
 
                 # advance the next step
@@ -86,7 +86,7 @@ function Calculate!(fields::Fields{T, N, Array{T, N}}, settings::Settings,
     end
 end
 
-function Get_Fields(fields::Fields{T, N, Array{T, N}}) where {T, N}
+function get_fields(fields::Fields{T, N, Array{T, N}}) where {T, N}
     @inbounds begin
         u_no_ghost = fields.u[(begin + 1):(end - 1), (begin + 1):(end - 1),
                               (begin + 1):(end - 1)]
