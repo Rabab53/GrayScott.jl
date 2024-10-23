@@ -1,4 +1,3 @@
-
 import MPI
 import GrayScott
 
@@ -10,7 +9,7 @@ verbose = false
 root_dir = dirname(dirname(pathof(GrayScott)))
 config_file = joinpath(root_dir, "examples", "settings-files.toml")
 
-# unit tests for module GrayScott 
+# unit tests for module GrayScott
 include(joinpath("unit", "simulation", "unit-Inputs.jl"))
 include(joinpath("unit", "simulation", "unit-Simulation.jl"))
 include(joinpath("unit", "simulation", "unit-Simulation_CUDA.jl"))
@@ -25,4 +24,4 @@ MPI.Finalize()
 # The downside is that only global success can be tested and not internal states.
 
 # functional tests
-# include(joinpath("functional", "functional-GrayScott.jl"))
+include(joinpath("functional", "functional-GrayScott.jl"))
