@@ -28,6 +28,7 @@ Base.@kwdef mutable struct Settings
     mesh_type::String = "image"
     precision::String = "Float64"
     backend::String = "CPU"
+    kernel_language::String = "Plain"
 end
 
 SettingsKeys = Set{String}([
@@ -49,6 +50,7 @@ SettingsKeys = Set{String}([
                                "mesh_type",
                                "precision",
                                "backend",
+                               "kernel_language",
                            ])
 
 Base.@kwdef mutable struct MPICartDomain

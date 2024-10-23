@@ -1,46 +1,36 @@
-using KernelAbstractions
-const DEV = :NVIDIA
+import KernelAbstractions
+import KernelAbstractions: @kernel, @index
 
+KA_backend(::Val{:cpu}) = KernelAbstractions.CPU()
+KA_backend(::Val{backend_symbol}) where {backend_symbol} =
+    error("Unknown backend: $backend_symbol")
 
-if DEV == :NVIDIA
-    using CUDA
-    const ArrayKA = CUDA.CuArray
-    const Backend = CUDABackend()
-elseif DEV == :AMD
-    using AMDGPU
-    const ArrayKA = AMDGPU.ROCArrays
-    const Backend = ROCBackend()
-elseif DEV == :oneAPI
-    using oneAPI 
-    const ArrayKA = oneAPI.oneArray
-    const Backend = oneAPIBackend()
-elseif DEV == :Metal
-    using Metal 
-    const ArrayKA = Metal.MetalArray
-    const Backend = MetalBackend()
-else DEV == :CPU
-    const ArrayKA = Array
-    const Backend = CPU()
+# This is necessary since KernelAbstrations doesn't provide an
+# allocate-and-copy function
+function similar_KA(Backend, A)
+    B = KernelAbstractions.allocate(Backend, eltype(A), size(A))
+    KernelAbstractions.copyto!(Backend, B, A)
+    return B
 end
 
-function init_fields_CUDA(settings::Settings, mcd::MPICartDomain,
-                           T)::Fields{T, 3, <:ArrayKA{T, 3}}
+function init_fields(::Val{backend_symbol}, ::Val{:kernelabstractions},
+                     settings::Settings,
+                     mcd::MPICartDomain,
+                     T)::Fields{T, 3} where {backend_symbol}
     size_x = mcd.proc_sizes[1]
     size_y = mcd.proc_sizes[2]
     size_z = mcd.proc_sizes[3]
 
-    # should be ones
-    #u = CUDA.ones(T, size_x + 2, size_y + 2, size_z + 2)
-    #v = CUDA.zeros(T, size_x + 2, size_y + 2, size_z + 2)
+    Backend = KA_backend(Val{backend_symbol}())
 
-    u =  KernelAbstractions.ones(Backend, T, size_x + 2, size_y + 2, size_z + 2)
-    v =  KernelAbstractions.zeros(Backend, T, size_x + 2, size_y + 2, size_z + 2)
+    u = KernelAbstractions.ones(Backend, T, size_x + 2, size_y + 2, size_z + 2)
+    v = KernelAbstractions.zeros(Backend, T, size_x + 2, size_y + 2, size_z + 2)
 
-    u_temp =  KernelAbstractions.zeros(Backend, T, size_x + 2, size_y + 2, size_z + 2)
-    v_temp =  KernelAbstractions.zeros(Backend, T, size_x + 2, size_y + 2, size_z + 2)
-    
-    cu_offsets = ArrayKA(mcd.proc_offsets)
-    cu_sizes = ArrayKA(mcd.proc_sizes)
+    u_temp = KernelAbstractions.zeros(Backend, T, size_x + 2, size_y + 2, size_z + 2)
+    v_temp = KernelAbstractions.zeros(Backend, T, size_x + 2, size_y + 2, size_z + 2)
+
+    cu_offsets = similar_KA(Backend, mcd.proc_offsets)
+    cu_sizes = similar_KA(Backend, mcd.proc_sizes)
 
     d::Int64 = 6
     minL = Int32(settings.L / 2 - d)
@@ -49,11 +39,11 @@ function init_fields_CUDA(settings::Settings, mcd::MPICartDomain,
     threads = (16, 16)
     nrange = (settings.L * threads[1], settings.L * threads[2])
 
-    kernel! = populate_CUDA_kernel!(Backend, threads)
-    kernel!(u, v, 
-            cu_offsets, 
-            cu_sizes, 
-            minL, maxL, 
+    kernel! = populate_kernel!(Backend, threads)
+    kernel!(u, v,
+            cu_offsets,
+            cu_sizes,
+            minL, maxL;
             ndrange=nrange)
 
     KernelAbstractions.synchronize(Backend)
@@ -63,23 +53,20 @@ function init_fields_CUDA(settings::Settings, mcd::MPICartDomain,
     return fields
 end
 
-function iterate!(fields::Fields{T, N, <:ArrayKA{T, N}},
+function iterate!(::Val{backend_symbol}, ::Val{:kernelabstractions},
+                  fields::Fields{T, N},
                   settings::Settings,
-                  mcd::MPICartDomain) where {T, N}
+                  mcd::MPICartDomain) where {backend_symbol, T, N}
     exchange!(fields, mcd)
     # this function is the bottleneck
-    calculate!(fields, settings, mcd)
+    calculate!(Val{backend_symbol}(), Val{:kernelabstractions}(), fields, settings, mcd)
 
     # swap the names
     fields.u, fields.u_temp = fields.u_temp, fields.u
     fields.v, fields.v_temp = fields.v_temp, fields.v
 end
 
-
-
-@kernel function populate_CUDA_kernel!(u, v, offsets, sizes, minL, maxL)
-
-
+@kernel function populate_kernel!(u, v, offsets, sizes, minL, maxL)
     # local coordinates (this are 1-index already)
     #lz = (CUDA.blockIdx().x - Int32(1)) * CUDA.blockDim().x +
          #CUDA.threadIdx().x
@@ -89,7 +76,6 @@ end
     lz, ly = @index(Global, NTuple)
 
     if lz <= size(u, 3) && ly <= size(u, 2)
-
         # get global coordinates
         z = lz + offsets[3] - 1
         y = ly + offsets[2] - 1
@@ -111,11 +97,12 @@ end
     end
 end
 
-function calculate!(fields::Fields{T, N, <:ArrayKA{T, N}},
-                     settings::Settings,
-                     mcd::MPICartDomain) where {T, N}
+function calculate!(::Val{backend_symbol}, ::Val{:kernelabstractions},
+                    fields::Fields{T, N},
+                    settings::Settings,
+                    mcd::MPICartDomain) where {backend_symbol, T, N}
     @kernel function calculate_kernel!(u, v, u_temp, v_temp, sizes, Du, Dv, F, K,
-                               noise, dt)
+                                       noise, dt)
 
         # local coordinates (this are 1-index already)
         #k = (CUDA.blockIdx().x - Int32(1)) * CUDA.blockDim().x +
@@ -153,11 +140,12 @@ function calculate!(fields::Fields{T, N, <:ArrayKA{T, N}},
     noise = convert(T, settings.noise)
     dt = convert(T, settings.dt)
 
-    cu_sizes = ArrayKA(mcd.proc_sizes)
+    Backend = KA_backend(Val{backend_symbol}())
+
+    cu_sizes = similar_KA(Backend, mcd.proc_sizes)
 
     threads = (16, 16)
     nrange = (settings.L * threads[1], settings.L * threads[2])
-
 
     kernel! = calculate_kernel!(Backend, threads)
     kernel!(fields.u,
@@ -166,20 +154,10 @@ function calculate!(fields::Fields{T, N, <:ArrayKA{T, N}},
             fields.v_temp,
             cu_sizes,
             Du, Dv, F, K,
-            noise, dt, 
+            noise, dt,
             ndrange=nrange)
 
     KernelAbstractions.synchronize(Backend)
-
 end
 
-function get_fields(fields::Fields{T, N, <:ArrayKA{T, N}}) where {T, N}
-    u = Array(fields.u)
-    u_no_ghost = u[(begin + 1):(end - 1), (begin + 1):(end - 1),
-                   (begin + 1):(end - 1)]
-
-    v = Array(fields.v)
-    v_no_ghost = v[(begin + 1):(end - 1), (begin + 1):(end - 1),
-                   (begin + 1):(end - 1)]
-    return u_no_ghost, v_no_ghost
-end
+# get_fields is already defined for each backend

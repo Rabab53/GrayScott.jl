@@ -1,5 +1,4 @@
 function initialization(args::Vector{String})
-
     MPI.Init()
     comm = MPI.COMM_WORLD
 
@@ -11,9 +10,10 @@ function initialization(args::Vector{String})
     mpi_cart_domain = init_domain(settings, comm)
 
     # initialize fields
+    T = eval(Meta.parse(settings.precision))
     fields = init_fields(settings,
                          mpi_cart_domain,
-                         Helper.get_type(settings.precision))
+                         T)
 
     return comm, settings, mpi_cart_domain, fields
 
@@ -63,22 +63,6 @@ function init_domain(settings::Settings, comm::MPI.Comm)::MPICartDomain
     mcd.proc_neighbors["north"] = MPI.Cart_shift(mcd.cart_comm, 2, 1)
 
     return mcd
-end
-
-"""
-Create and Initialize fields for either CPU, CUDA.jl, AMDGPU.jl backends
-Multiple dispatch would direct to the appropriate overleaded function
-"""
-function init_fields(settings::Settings,
-                     mcd::MPICartDomain, T)::Fields{T}
-    lowercase_backend = lowercase(settings.backend)
-    if lowercase_backend == "cuda"
-        return init_fields_CUDA(settings, mcd, T)
-    elseif lowercase_backend == "amdgpu"
-        return init_fields_AMDGPU(settings, mcd, T)
-    end
-    # everything else would trigger the CPU threads backend
-    return init_fields_CPU(settings, mcd, T)
 end
 
 function get_MPI_faces(size_x, size_y, size_z, T)
