@@ -21,14 +21,13 @@ include("Common.jl")
 
 # include functions for CPU multithreading
 include("Simulation_CPU.jl")
-# include functions for NVIDIA GPUs using CUDA.jl
-#include("Simulation_CUDA.jl")
-# include functions for AMD GPUs using AMDGPU.jl
-#include("Simulation_AMDGPU.jl")
-# include functions for all GPUs using KernelAbstractions.jl
+# include functions for KernelAbstractions execution (CPU/GPU)
 include("Simulation_KA.jl")
 
 # include functions for MPI communication
 include("communication.jl")
+
+# include public functions to setup and drive a simulation
+include("public.jl")
 
 end # module

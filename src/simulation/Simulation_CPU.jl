@@ -1,5 +1,5 @@
-function init_fields_CPU(settings::Settings,
-                         mcd::MPICartDomain, T)::Fields{T}
+function init_fields(::Val{:cpu}, ::Val{:plain}, settings::Settings,
+                     mcd::MPICartDomain, T)::Fields{T}
     size_x = mcd.proc_sizes[1]
     size_y = mcd.proc_sizes[2]
     size_z = mcd.proc_sizes[3]
@@ -41,19 +41,23 @@ function init_fields_CPU(settings::Settings,
     return fields
 end
 
-function iterate!(fields::Fields{T, N, Array{T, N}}, settings::Settings,
-                  mcd::MPICartDomain) where {T, N}
+function iterate!(::Val{backend_symbol}, ::Val{:plain},
+                  fields::Fields{T, N, Array{T, N}},
+                  settings::Settings,
+                  mcd::MPICartDomain) where {backend_symbol, T, N}
     exchange!(fields, mcd)
     # this function is the bottleneck
-    calculate!(fields, settings, mcd)
+    calculate!(Val{backend_symbol}(), Val{:kernel_abstractions}(), fields, settings, mcd)
 
     # swap the names
     fields.u, fields.u_temp = fields.u_temp, fields.u
     fields.v, fields.v_temp = fields.v_temp, fields.v
 end
 
-function calculate!(fields::Fields{T, N, Array{T, N}}, settings::Settings,
-                     mcd::MPICartDomain) where {T, N}
+function calculate!(::Val{backend_symbol}, ::Val{:kernel_abstractions},
+                    fields::Fields{T, N, Array{T, N}},
+                    settings::Settings,
+                    mcd::MPICartDomain) where {backend_symbol, T, N}
     Du = convert(T, settings.Du)
     Dv = convert(T, settings.Dv)
     F = convert(T, settings.F)
@@ -86,7 +90,7 @@ function calculate!(fields::Fields{T, N, Array{T, N}}, settings::Settings,
     end
 end
 
-function get_fields(fields::Fields{T, N, Array{T, N}}) where {T, N}
+function get_fields(::Val{:cpu}, fields::Fields{T, N, Array{T, N}}) where {T, N}
     @inbounds begin
         u_no_ghost = fields.u[(begin + 1):(end - 1), (begin + 1):(end - 1),
                               (begin + 1):(end - 1)]

@@ -1,7 +1,18 @@
-import CUDA
+module CUDAExt
 
-function init_fields_CUDA(settings::Settings, mcd::MPICartDomain,
-                          T)::Fields{T, 3, <:CUDA.CuArray{T, 3}}
+import GrayScott
+import GrayScott: Simulation
+import GrayScott.Simulation: Settings, Fields, MPICartDomain
+import Distributions
+import CUDA
+import CUDA: CuArray
+
+Simulation.KA_backend(::Val{:cuda}) = CUDA.CUDABackend()
+
+function Simulation.init_fields(::Val{:cuda}, ::Val{:plain},
+                                settings::Settings,
+                                mcd::MPICartDomain,
+                                T)::Fields{T, 3, <:CuArray{T, 3}}
     size_x = mcd.proc_sizes[1]
     size_y = mcd.proc_sizes[2]
     size_z = mcd.proc_sizes[3]
@@ -13,8 +24,8 @@ function init_fields_CUDA(settings::Settings, mcd::MPICartDomain,
     u_temp = CUDA.zeros(T, size_x + 2, size_y + 2, size_z + 2)
     v_temp = CUDA.zeros(T, size_x + 2, size_y + 2, size_z + 2)
 
-    cu_offsets = CUDA.CuArray(mcd.proc_offsets)
-    cu_sizes = CUDA.CuArray(mcd.proc_sizes)
+    cu_offsets = CuArray(mcd.proc_offsets)
+    cu_sizes = CuArray(mcd.proc_sizes)
 
     d::Int64 = 6
     minL = Int64(settings.L / 2 - d)
@@ -24,31 +35,31 @@ function init_fields_CUDA(settings::Settings, mcd::MPICartDomain,
     threads = (16, 16)
     blocks = (settings.L, settings.L)
 
-    CUDA.@cuda threads=threads blocks=blocks populate_CUDA!(u, v,
-                                                            cu_offsets,
-                                                            cu_sizes,
-                                                            minL, maxL)
+    CUDA.@cuda threads=threads blocks=blocks populate!(u, v,
+                                                       cu_offsets,
+                                                       cu_sizes,
+                                                       minL, maxL)
     CUDA.synchronize()
 
-    xy_face_t, xz_face_t, yz_face_t = get_MPI_faces(size_x, size_y, size_z, T)
+    xy_face_t, xz_face_t, yz_face_t = Simulation.get_MPI_faces(size_x, size_y, size_z, T)
 
     fields = Fields(u, v, u_temp, v_temp, xy_face_t, xz_face_t, yz_face_t)
     return fields
 end
 
-function iterate!(fields::Fields{T, N, <:CUDA.CuArray{T, N}},
-                  settings::Settings,
-                  mcd::MPICartDomain) where {T, N}
-    exchange!(fields, mcd)
-    # this function is the bottleneck
-    calculate!(fields, settings, mcd)
+function Simulation.iterate!(::Val{:cuda}, ::Val{:plain},
+                             fields::Fields{T, N, <:CuArray{T, N}},
+                             settings::Settings,
+                             mcd::MPICartDomain) where {T, N}
+    Simulation.exchange!(fields, mcd)
+    Simulation.calculate!(Val{:cuda}(), Val{:plain}(), fields, settings, mcd)
 
     # swap the names
     fields.u, fields.u_temp = fields.u_temp, fields.u
     fields.v, fields.v_temp = fields.v_temp, fields.v
 end
 
-function populate_CUDA!(u, v, offsets, sizes, minL, maxL)
+function populate!(u, v, offsets, sizes, minL, maxL)
 
     # local coordinates (this are 1-index already)
     lz = (CUDA.blockIdx().x - Int32(1)) * CUDA.blockDim().x +
@@ -67,7 +78,7 @@ function populate_CUDA!(u, v, offsets, sizes, minL, maxL)
 
             for x in minL:maxL
                 # check if global coordinates for initialization are inside the region
-                if !is_inside(x, y, z, offsets, sizes)
+                if !Simulation.is_inside(x, y, z, offsets, sizes)
                     continue
                 end
 
@@ -79,9 +90,10 @@ function populate_CUDA!(u, v, offsets, sizes, minL, maxL)
     end
 end
 
-function calculate!(fields::Fields{T, N, <:CUDA.CuArray{T, N}},
-                     settings::Settings,
-                     mcd::MPICartDomain) where {T, N}
+function Simulation.calculate!(::Val{:cuda}, ::Val{:plain},
+                               fields::Fields{T, N, <:CuArray{T, N}},
+                               settings::Settings,
+                               mcd::MPICartDomain) where {T, N}
     function calculate_kernel!(u, v, u_temp, v_temp, sizes, Du, Dv, F, K,
                                noise, dt)
 
@@ -98,11 +110,11 @@ function calculate!(fields::Fields{T, N, <:CUDA.CuArray{T, N}},
                 u_ijk = u[i, j, k]
                 v_ijk = v[i, j, k]
 
-                du = Du * laplacian(i, j, k, u) - u_ijk * v_ijk^2 +
+                du = Du * Simulation.laplacian(i, j, k, u) - u_ijk * v_ijk^2 +
                      F * (1.0 - u_ijk) +
                      noise * rand(Distributions.Uniform(-1, 1))
 
-                dv = Dv * laplacian(i, j, k, v) + u_ijk * v_ijk^2 -
+                dv = Dv * Simulation.laplacian(i, j, k, v) + u_ijk * v_ijk^2 -
                      (F + K) * v_ijk
 
                 # advance the next step
@@ -119,7 +131,7 @@ function calculate!(fields::Fields{T, N, <:CUDA.CuArray{T, N}},
     noise = convert(T, settings.noise)
     dt = convert(T, settings.dt)
 
-    cu_sizes = CUDA.CuArray(mcd.proc_sizes)
+    cu_sizes = CuArray(mcd.proc_sizes)
 
     threads = (16, 16)
     blocks = (settings.L, settings.L)
@@ -134,7 +146,7 @@ function calculate!(fields::Fields{T, N, <:CUDA.CuArray{T, N}},
     CUDA.synchronize()
 end
 
-function get_fields(fields::Fields{T, N, <:CUDA.CuArray{T, N}}) where {T, N}
+function Simulation.get_fields(::Val{:cuda}, fields::Fields{T, N, <:CuArray{T, N}}) where {T, N}
     u = Array(fields.u)
     u_no_ghost = u[(begin + 1):(end - 1), (begin + 1):(end - 1),
                    (begin + 1):(end - 1)]
@@ -144,3 +156,5 @@ function get_fields(fields::Fields{T, N, <:CUDA.CuArray{T, N}}) where {T, N}
                    (begin + 1):(end - 1)]
     return u_no_ghost, v_no_ghost
 end
+
+end # module CUDAExt
