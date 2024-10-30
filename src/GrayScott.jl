@@ -8,18 +8,14 @@ The bp output files can be visualized with ParaView.
 
 module GrayScott
 
-import MPI #, ADIOS2
+import MPI , ADIOS2
 
 using KernelAbstractions #, OffsetArrays
-
 
 # manages the simulation computation
 include(joinpath("simulation", "Simulation.jl"))
 import .Simulation
 
-# manages the I/O
-#include(joinpath("simulation", "IO.jl"))
-#import .IO
 
 function julia_main()::Cint
     try
@@ -37,7 +33,7 @@ function main(args::Vector{String})
     rank = MPI.Comm_rank(comm)
     
     # initialize IOStream struct holding ADIOS-2 components for parallel I/O
-    #stream = IO.init(settings, mpi_cart_domain, fields)
+    stream = Simulation.IO.init(settings, mpi_cart_domain, fields)
 
     restart_step::Int32 = 0
     # @TODO: checkpoint-restart 
@@ -53,11 +49,11 @@ function main(args::Vector{String})
                         step / settings.plotgap)
             end
 
-           # IO.write_step!(stream, step, fields)
+            Simulation.IO.write_step!(stream, step, fields)
         end
     end
 
-   #IO.close!(stream)
+    Simulation.IO.close!(stream)
 
    Simulation.finalize()
 

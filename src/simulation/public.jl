@@ -39,3 +39,8 @@ end
 
 iterate!(::Val{backend}, ::Val{lang}, fields, settings, mcd) where {backend, lang} =
     error("Backend :$backend and kernel language :$lang not supported.")
+
+function get_fields(fields::Fields)
+    backend_symbol, lang_symbol = load_backend_and_lang(settings)
+    get_fields(backend_symbol, fields)
+end

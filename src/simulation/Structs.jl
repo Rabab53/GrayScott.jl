@@ -6,6 +6,9 @@ Settings(Du = 0.2, noise = 0.2)
 See:
 https://discourse.julialang.org/t/default-value-of-some-fields-in-a-mutable-struct/33408/24?u=williamfgc
 """
+
+import ADIOS2
+
 Base.@kwdef mutable struct Settings
     L::Int64 = 128
     steps::Int32 = 20000
@@ -22,9 +25,9 @@ Base.@kwdef mutable struct Settings
     checkpoint_output::String = "ckpt.bp"
     restart::Bool = false
     restart_input::String = "ckpt.bp"
-    #adios_config::String = "adios2.yaml"
-    #adios_span::Bool = false
-    #adios_memory_selection::Bool = false
+    adios_config::String = "adios2.yaml"
+    adios_span::Bool = false
+    adios_memory_selection::Bool = false
     mesh_type::String = "image"
     precision::String = "Float64"
     backend::String = "CPU"
@@ -47,6 +50,9 @@ SettingsKeys = Set{String}([
                                "checkpoint_output",
                                "restart",
                                "restart_input",
+                               "adios_config",
+                               "adios_span",
+                               "adios_memory_selection",
                                "mesh_type",
                                "precision",
                                "backend",
@@ -90,7 +96,7 @@ end
 """
 Carry the I/O information for outputs
 """
-#=
+
 struct IOStream
     adios::ADIOS2.Adios
     io::ADIOS2.AIO
@@ -99,4 +105,4 @@ struct IOStream
     var_U::ADIOS2.Variable
     var_V::ADIOS2.Variable
 end
-=#
+

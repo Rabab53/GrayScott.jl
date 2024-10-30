@@ -4,7 +4,7 @@ CUDA.jl, AMDGPU.jl, and KernelAbstractions.jl
 """
 module Simulation
 
-export init_domain, init_fields
+export init_domain, init_fields, get_fields
 
 import MPI
 import Distributions
@@ -16,6 +16,7 @@ import .Settings, .MPICartDomain, .Fields
 # initializes inputs from configuration file
 include("Inputs.jl")
 import .Inputs
+
 
 include("Common.jl")
 
@@ -29,5 +30,8 @@ include("communication.jl")
 
 # include public functions to setup and drive a simulation
 include("public.jl")
+
+include("IO.jl")
+import .IO
 
 end # module

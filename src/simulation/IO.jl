@@ -3,12 +3,12 @@ module IO
 export init, write_step!
 
 # import external module
-import ADIOS2
+import MPI, ADIOS2
 
-# internal submodule
-import ..Simulation
 # types from parent module types in Structs.jl
 import ..Settings, ..MPICartDomain, ..Fields, ..IOStream
+
+include("public.jl")
 
 function init(settings::Settings, mcd::MPICartDomain,
               fields::Fields{T}) where {T}
@@ -42,11 +42,21 @@ function init(settings::Settings, mcd::MPICartDomain,
     return IOStream(adios, io, engine, var_step, var_U, var_V)
 end
 
+function get_value(fields::Fields{T, N, Array{T, N}}) where {T, N}
+  @inbounds begin
+      u_no_ghost = fields.u[(begin + 1):(end - 1), (begin + 1):(end - 1),
+                            (begin + 1):(end - 1)]
+      v_no_ghost = fields.v[(begin + 1):(end - 1), (begin + 1):(end - 1),
+                            (begin + 1):(end - 1)]
+  end
+  return u_no_ghost, v_no_ghost
+end
+
+
 function write_step!(stream::IOStream, step::Int32, fields::Fields{T}) where {T}
 
     # this creates temporaries similar to Fortran
-    u_no_ghost, v_no_ghost = Simulation.get_fields(fields)
-
+    u_no_ghost, v_no_ghost = get_value(fields)
     # writer engine
     w = stream.engine
 
