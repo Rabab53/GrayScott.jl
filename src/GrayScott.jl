@@ -48,7 +48,7 @@ function main(args::Vector{String})
         step += 1
 
         if step % settings.plotgap == 0
-            if rank == 0
+            if rank == 0 && settings.verbose
                 println("Simulation at step ", step, " writing output step ",
                         step / settings.plotgap)
             end

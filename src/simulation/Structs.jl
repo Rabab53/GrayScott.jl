@@ -29,6 +29,7 @@ Base.@kwdef mutable struct Settings
     precision::String = "Float64"
     backend::String = "CPU"
     kernel_language::String = "Plain"
+    verbose::Bool = false
 end
 
 SettingsKeys = Set{String}([
@@ -51,6 +52,7 @@ SettingsKeys = Set{String}([
                                "precision",
                                "backend",
                                "kernel_language",
+                               "verbose",
                            ])
 
 Base.@kwdef mutable struct MPICartDomain
