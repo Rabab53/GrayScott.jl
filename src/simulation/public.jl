@@ -18,7 +18,7 @@ multiple dispatch on the configured backend and kernel language.
 function init_fields(settings::Settings,
                      mcd::MPICartDomain, T)::Fields{T}
     # Extract the backend and kernel language symbols from the settings
-    backend_symbol, lang_symbol = load_backend_and_lang(settings)
+    backend_symbol, lang_symbol = Inputs.load_backend_and_lang(settings)
 
     # Delegate to the appropriate backend-specific function
     return init_fields(Val{backend_symbol}(), Val{lang_symbol}(), settings, mcd, T)
@@ -44,7 +44,7 @@ chemical substances `u` and `v` based on the Gray-Scott reaction-diffusion equat
 """
 function iterate!(fields::Fields, settings::Settings, mcd::MPICartDomain)
     # Extract the backend and kernel language symbols from the settings
-    backend_symbol, lang_symbol = load_backend_and_lang(settings)
+    backend_symbol, lang_symbol = Inputs.load_backend_and_lang(settings)
 
     # Delegate to the appropriate backend-specific function
     iterate!(Val{backend_symbol}(), Val{lang_symbol}(), fields, settings, mcd)
