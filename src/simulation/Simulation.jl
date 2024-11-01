@@ -22,6 +22,9 @@ include("Simulation_KA.jl")
 # Defines functions for MPI communication and halo exchange
 include("communication.jl")
 
+# Defines functions for I/O with ADIOS2
+include("IO.jl")
+
 # Defines public functions to setup and drive a GrayScott simulation
 include("public.jl")
 

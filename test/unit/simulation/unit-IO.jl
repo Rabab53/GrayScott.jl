@@ -1,12 +1,18 @@
 
 import Test: @testset, @test, @test_throws
 
+import MPI
 import ADIOS2
 
 # import submodule
-import GrayScott: IO
+import GrayScott: Simulation, IO
 # import types
-import GrayScott: Settings, MPICartDomain, Fields
+import .Simulation: Settings, MPICartDomain, Fields
+
+is_mpi_init = MPI.Initialized()
+if is_mpi_init
+    MPI.Finalize()
+end
 
 @testset "unit-IO.init" begin
     settings = Settings()
@@ -33,4 +39,8 @@ end
     stream = IO.init(settings, mpi_cart_domain, fields)
     IO.write_step!(stream, Int32(0), fields)
     IO.close!(stream)
+end
+
+if is_mpi_init
+    MPI.Init()
 end

@@ -10,7 +10,16 @@ export init, write_step!
 import ADIOS2
 
 import ..Simulation
-import ..Settings, ..MPICartDomain, ..Fields, ..IOStream
+import ..Simulation: Settings, MPICartDomain, Fields
+
+struct ADIOSStream
+    adios::ADIOS2.Adios
+    io::ADIOS2.AIO
+    engine::ADIOS2.Engine
+    var_step::ADIOS2.Variable
+    var_U::ADIOS2.Variable
+    var_V::ADIOS2.Variable
+end
 
 """
 Initializes the ADIOS2 IO system for writing simulation data.
@@ -23,7 +32,7 @@ including visualization schemas for Fides and VTK.
 - `fields::Fields{T}`: The fields containing simulation data
 
 # Returns
-- `IOStream`: An initialized IOStream object for writing data
+- `ADIOSStream`: An initialized ADIOSStream object for writing data
 """
 function init(settings::Settings, mcd::MPICartDomain,
               fields::Fields{T}) where {T}
@@ -57,22 +66,23 @@ function init(settings::Settings, mcd::MPICartDomain,
     var_U = ADIOS2.define_variable(io, "U", T, shape, start, count)
     var_V = ADIOS2.define_variable(io, "V", T, shape, start, count)
 
-    return IOStream(adios, io, engine, var_step, var_U, var_V)
+    return ADIOSStream(adios, io, engine, var_step, var_U, var_V)
 end
 
 """
 Writes the current state of the simulation to disk using ADIOS2.
 
 # Arguments
-- `stream::IOStream`: The ADIOS2 IO stream for writing data
+- `stream::ADIOSStream`: The ADIOS2 IO stream for writing data
 - `step::Int32`: The current simulation step number
 - `fields::Fields{T}`: The fields containing the chemical concentrations to write
 
 # No return value
 """
-function write_step!(stream::IOStream, step::Int32, fields::Fields{T}) where {T}
+function write_step!(stream::ADIOSStream, step::Int32, fields::Fields{T}, settings::Settings) where {T}
     # Get field data without ghost cells for writing
-    u_no_ghost, v_no_ghost = Simulation.get_fields(fields)
+    backend, _ = Simulation.Inputs.load_backend_and_lang(settings)
+    u_no_ghost, v_no_ghost = Simulation.get_fields(Val{backend}(), fields)
 
     # Get writer engine from stream
     w = stream.engine
@@ -90,11 +100,11 @@ Closes the ADIOS2 IO system, ensuring all data is properly written and resources
 are cleaned up.
 
 # Arguments
-- `stream::IOStream`: The ADIOS2 IO stream to close
+- `stream::ADIOSStream`: The ADIOS2 IO stream to close
 
 # No return value
 """
-function close!(stream::IOStream)
+function close!(stream::ADIOSStream)
     ADIOS2.close(stream.engine)
     ADIOS2.adios_finalize(stream.adios)
 end
