@@ -65,36 +65,6 @@ function init_fields(::Val{:cpu}, ::Val{:plain}, settings::Settings,
 end
 
 """
-Iterate over the fields for a single time step, updating the concentrations of the
-chemical substances `u` and `v` based on the Gray-Scott reaction-diffusion equations.
-
-# Arguments
-- `fields::Fields`: The fields containing the concentrations of the chemical substances.
-- `settings::Settings`: Simulation settings containing parameters like diffusion rates.
-- `mcd::MPICartDomain`: The local subdomain configuration for the current process.
-
-# No return value (operates in-place)
-"""
-function iterate!(::Val{backend_symbol}, ::Val{:plain},
-                  fields::Fields{T, N, Array{T, N}},
-                  settings::Settings,
-                  mcd::MPICartDomain) where {backend_symbol, T, N}
-    # Perform the exchange of ghost cells between neighboring processes
-    # This function is communication-bound
-    exchange!(fields, mcd)
-
-    # Calculate the new values for the fields `u` and `v` based on the Gray-Scott equations
-    # This function is compute/memory-bound
-    calculate!(Val{backend_symbol}(), Val{:kernel_abstractions}(), fields, settings, mcd)
-
-    # Swap the fields to prepare for the next iteration
-    fields.u, fields.u_temp = fields.u_temp, fields.u
-    fields.v, fields.v_temp = fields.v_temp, fields.v
-
-    return
-end
-
-"""
 Calculates the Gray-Scott reaction-diffusion equations for the fields `u` and `v`
 for the current process's local subdomain.
 
@@ -104,7 +74,7 @@ for the current process's local subdomain.
 
 # No return value (operates in-place)
 """
-function calculate!(::Val{backend_symbol}, ::Val{:kernel_abstractions},
+function calculate!(::Val{backend_symbol}, ::Val{:plain},
                     fields::Fields{T, N, Array{T, N}},
                     settings::Settings,
                     mcd::MPICartDomain) where {backend_symbol, T, N}

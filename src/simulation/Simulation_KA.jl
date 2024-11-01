@@ -77,18 +77,6 @@ chemical substances `u` and `v` based on the Gray-Scott reaction-diffusion equat
 
 # No return value (operates in-place)
 """
-function iterate!(::Val{backend_symbol}, ::Val{:kernelabstractions},
-                  fields::Fields{T, N},
-                  settings::Settings,
-                  mcd::MPICartDomain) where {backend_symbol, T, N}
-    exchange!(fields, mcd)
-    # this function is the bottleneck
-    calculate!(Val{backend_symbol}(), Val{:kernelabstractions}(), fields, settings, mcd)
-
-    # swap the names
-    fields.u, fields.u_temp = fields.u_temp, fields.u
-    fields.v, fields.v_temp = fields.v_temp, fields.v
-end
 
 @kernel function populate_kernel!(u, v, offsets, sizes, minL, maxL)
     # local coordinates (this are 1-index already)

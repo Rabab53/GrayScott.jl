@@ -48,19 +48,6 @@ function Simulation.init_fields(::Val{:amdgpu}, ::Val{:plain},
     return fields
 end
 
-function Simulation.iterate!(::Val{:amdgpu}, ::Val{:plain},
-                             fields::Fields{T, N, <:ROCArray{T, N}},
-                             settings::Settings,
-                             mcd::MPICartDomain) where {T, N}
-    Simulation.exchange!(fields, mcd)
-    # this function is the bottleneck
-    Simulation.calculate!(Val{:amdgpu}(), Val{:plain}(), fields, settings, mcd)
-
-    # swap the names
-    fields.u, fields.u_temp = fields.u_temp, fields.u
-    fields.v, fields.v_temp = fields.v_temp, fields.v
-end
-
 function populate!(u, v, offsets, sizes, minL, maxL)
 
     # local coordinates (this are 1-index already)

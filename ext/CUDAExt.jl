@@ -47,18 +47,6 @@ function Simulation.init_fields(::Val{:cuda}, ::Val{:plain},
     return fields
 end
 
-function Simulation.iterate!(::Val{:cuda}, ::Val{:plain},
-                             fields::Fields{T, N, <:CuArray{T, N}},
-                             settings::Settings,
-                             mcd::MPICartDomain) where {T, N}
-    Simulation.exchange!(fields, mcd)
-    Simulation.calculate!(Val{:cuda}(), Val{:plain}(), fields, settings, mcd)
-
-    # swap the names
-    fields.u, fields.u_temp = fields.u_temp, fields.u
-    fields.v, fields.v_temp = fields.v_temp, fields.v
-end
-
 function populate!(u, v, offsets, sizes, minL, maxL)
 
     # local coordinates (this are 1-index already)
