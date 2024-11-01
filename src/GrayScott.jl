@@ -60,8 +60,6 @@ function main(args::Vector{String})
    #IO.close!(stream)
 
    Simulation.finalize()
-
-
 end
 
 end # module GrayScott

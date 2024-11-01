@@ -13,6 +13,19 @@ function similar_KA(Backend, A)
     return B
 end
 
+"""
+Initializes the fields for the simulation running on any backend, using KernelAbstractions.
+This function creates two fields, `u` and `v`, representing the concentrations
+of two chemical substances over a 3D grid.
+
+# Arguments
+- `settings::Settings`: The settings for the simulation
+- `mcd::MPICartDomain`: The MPI Cartesian domain
+- `T`: The type of the fields (e.g. `Float32`, `Float64`)
+
+# Returns
+- `Fields`: The fields for the simulation
+"""
 function init_fields(::Val{backend_symbol}, ::Val{:kernelabstractions},
                      settings::Settings,
                      mcd::MPICartDomain,
@@ -53,6 +66,17 @@ function init_fields(::Val{backend_symbol}, ::Val{:kernelabstractions},
     return fields
 end
 
+"""
+Iterate over the fields for a single time step, updating the concentrations of the
+chemical substances `u` and `v` based on the Gray-Scott reaction-diffusion equations.
+
+# Arguments
+- `fields::Fields`: The fields containing the concentrations of the chemical substances.
+- `settings::Settings`: Simulation settings containing parameters like diffusion rates.
+- `mcd::MPICartDomain`: The local subdomain configuration for the current process.
+
+# No return value (operates in-place)
+"""
 function iterate!(::Val{backend_symbol}, ::Val{:kernelabstractions},
                   fields::Fields{T, N},
                   settings::Settings,
@@ -97,19 +121,22 @@ end
     end
 end
 
+"""
+Calculates the Gray-Scott reaction-diffusion equations for the fields `u` and `v`
+for the current process's local subdomain.
+
+# Arguments:
+- `fields::Fields`: The fields containing the concentrations of the chemical substances.
+- `settings::Settings`: Simulation settings containing parameters like diffusion rates.
+
+# No return value (operates in-place)
+"""
 function calculate!(::Val{backend_symbol}, ::Val{:kernelabstractions},
                     fields::Fields{T, N},
                     settings::Settings,
                     mcd::MPICartDomain) where {backend_symbol, T, N}
     @kernel function calculate_kernel!(u, v, u_temp, v_temp, sizes, Du, Dv, F, K,
                                        noise, dt)
-
-        # local coordinates (this are 1-index already)
-        #k = (CUDA.blockIdx().x - Int32(1)) * CUDA.blockDim().x +
-        #    CUDA.threadIdx().x
-        #j = (CUDA.blockIdx().y - Int32(1)) * CUDA.blockDim().y +
-        #    CUDA.threadIdx().y
-
         k, j = @index(Global, NTuple)
 
         # loop through non-ghost cells
@@ -159,5 +186,3 @@ function calculate!(::Val{backend_symbol}, ::Val{:kernelabstractions},
 
     KernelAbstractions.synchronize(Backend)
 end
-
-# get_fields is already defined for each backend
