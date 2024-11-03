@@ -1,33 +1,28 @@
-""" 
-The present file contains runtime backend for using CPU Threads, and optionally 
-CUDA.jl, AMDGPU.jl, and KernelAbstractions.jl
-"""
 module Simulation
-
-export init_domain, init_fields
 
 import MPI
 import Distributions
 
-# contains relevant data containers "structs" for Input, Domain and Fields
+# Defines the data structures used in the simulation
 include("Structs.jl")
 import .Settings, .MPICartDomain, .Fields
 
-# initializes inputs from configuration file
+# Defines functions to load and parse the configuration file
 include("Inputs.jl")
 import .Inputs
 
+# Common functions used by the simulation internally
 include("Common.jl")
 
-# include functions for CPU multithreading
+# Defines functions for CPU multithreading with Julia's Threads module
 include("Simulation_CPU.jl")
-# include functions for KernelAbstractions execution (CPU/GPU)
+# Defines functions for CPU/GPU acceleration with KernelAbstractions.jl
 include("Simulation_KA.jl")
 
-# include functions for MPI communication
+# Defines functions for MPI communication and halo exchange
 include("communication.jl")
 
-# include public functions to setup and drive a simulation
+# Defines public functions to setup and drive a GrayScott simulation
 include("public.jl")
 
 end # module

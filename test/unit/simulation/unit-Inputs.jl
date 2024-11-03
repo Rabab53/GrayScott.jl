@@ -6,8 +6,7 @@ import GrayScott.Simulation: Inputs
 # these unit tests don't run as independent files
 
 @testset "unit-Inputs.get_settings" begin
-    Inputs.get_settings([config_file], MPI.COMM_WORLD)
+    Inputs.get_settings([config_file])
 
-    @test_throws(ArgumentError,
-                 Inputs.get_settings(["hello.nojson"], MPI.COMM_WORLD))
+    @test_throws(ArgumentError, Inputs.get_settings(["hello.nojson"]))
 end

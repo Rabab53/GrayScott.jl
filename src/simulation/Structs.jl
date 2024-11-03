@@ -1,10 +1,5 @@
 """
-Settings carry the settings from the simulation config file (TOML format)
-
-Using Base.@kwdef macro for easy defaults and enable keyword arguments
-Settings(Du = 0.2, noise = 0.2) 
-See:
-https://discourse.julialang.org/t/default-value-of-some-fields-in-a-mutable-struct/33408/24?u=williamfgc
+Contains the settings read from the simulation config file (TOML format).
 """
 Base.@kwdef mutable struct Settings
     L::Int64 = 128
@@ -32,73 +27,67 @@ Base.@kwdef mutable struct Settings
     verbose::Bool = false
 end
 
-SettingsKeys = Set{String}([
-                               "L",
-                               "steps",
-                               "plotgap",
-                               "F",
-                               "k",
-                               "dt",
-                               "Du",
-                               "Dv",
-                               "noise",
-                               "output",
-                               "checkpoint",
-                               "checkpoint_freq",
-                               "checkpoint_output",
-                               "restart",
-                               "restart_input",
-                               "mesh_type",
-                               "precision",
-                               "backend",
-                               "kernel_language",
-                               "verbose",
-                           ])
+# Set of keys that are allowed in the settings file
+const SettingsKeys = Set{String}([
+    "L",
+    "steps",
+    "plotgap",
+    "F",
+    "k",
+    "dt",
+    "Du",
+    "Dv",
+    "noise",
+    "output",
+    "checkpoint",
+    "checkpoint_freq",
+    "checkpoint_output",
+    "restart",
+    "restart_input",
+    "mesh_type",
+    "precision",
+    "backend",
+    "kernel_language",
+    "verbose",
+])
 
+"""
+Contains the MPI communicator and the Cartesian domain information.
+"""
 Base.@kwdef mutable struct MPICartDomain
+    # MPI Cartesian communicator
     cart_comm::MPI.Comm = MPI.COMM_NULL
 
-    # Cartesian communicator info
-    # Could used StaticArrays.jl?
-    # start dims with zeros
+    # Dimensions and coordinates of the local process in the Cartesian communicator
     dims::Vector{Int32} = zeros(Int32, 3)
     coords::Vector{Int32} = zeros(Int32, 3)
 
-    # local process mesh sizes and offsets in Cartesian domain info, using defaults
+    # Local process mesh sizes and offsets
     proc_sizes::Vector{Int64} = [128, 128, 128]
     proc_offsets::Vector{Int64} = [1, 1, 1]
 
-    # couldn't use NamedTuples as struct is mutable
+    # Neighbor ranks in the MPI Cartesian communicator
     proc_neighbors = Dict{String, Int32}("west" => -1, "east" => -1, "up" => -1,
                                          "down" => -1, "north" => -1,
                                          "south" => -1)
 end
 
 """
-Carry the physical field outputs: u and v
-Using AbstractArray to allow for Array, CuArray and ROCArray
+Contains the field values (`u` and `v`) to be simulated, as well as the MPI
+datatypes used for halo exchange.
+
+The field values are subtype of `AbstractArray` to allow them to be CPU
+`Array`s or GPU arrays (like `CuArray` (CUDA) or `ROCArray` (ROCm/AMDGPU)).
 """
 mutable struct Fields{T, N, A <: AbstractArray{T, N}}
+    # Field values
     u::A
     v::A
     u_temp::A
     v_temp::A
-    # MPI Datatypes for halo exchange MPI.Datatype(T)
+
+    # MPI datatypes for halo exchange
     xy_face_t::MPI.Datatype
     xz_face_t::MPI.Datatype
     yz_face_t::MPI.Datatype
 end
-
-"""
-Carry the I/O information for outputs
-"""
-#=
-struct IOStream
-    adios::ADIOS2.Adios
-    io::ADIOS2.AIO
-    engine::ADIOS2.Engine
-    var_step::ADIOS2.Variable
-    var_U::ADIOS2.Variable
-    var_V::ADIOS2.Variable
-end
-=#
