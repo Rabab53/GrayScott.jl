@@ -11,5 +11,6 @@ module load julia/1.10
 
 
 # Instantiate the project by installing packages in Project.toml
-julia --project=$GS_DIR -e 'using Pkg; Pkg.add("CUDA")'
 julia --project=$GS_DIR -e 'using Pkg; Pkg.instantiate()'
+julia --project=$GS_DIR -e 'using Pkg; Pkg.add("CUDA")'
+
