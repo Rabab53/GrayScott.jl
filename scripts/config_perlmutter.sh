@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Using the home directory for now
-GS_DIR=$HOME/GrayScott.jl
+GS_DIR=$SCRATCH/GrayScott.jl
 # remove existing generated Manifest.toml
 rm -f $GS_DIR/Manifest.toml
 rm -f $GS_DIR/LocalPreferences.toml
