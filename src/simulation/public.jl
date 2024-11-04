@@ -52,9 +52,9 @@ function iterate!(fields::Fields, settings::Settings, mcd::MPICartDomain)
     return
 end
 function iterate!(::Val{backend_symbol}, ::Val{lang_symbol},
-                  fields::Fields{T, N, Array{T, N}},
+                  fields::Fields,
                   settings::Settings,
-                  mcd::MPICartDomain) where {backend_symbol, lang_symbol, T, N}
+                  mcd::MPICartDomain) where {backend_symbol, lang_symbol}
     # Perform the exchange of ghost cells between neighboring processes
     # This function is communication-bound
     exchange!(fields, mcd)
