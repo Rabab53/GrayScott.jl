@@ -1,5 +1,5 @@
 import GrayScott#, ADIOS2
-
+import CUDA
 # using Profile
 # using PProf
 
