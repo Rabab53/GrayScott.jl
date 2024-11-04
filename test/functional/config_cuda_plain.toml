@@ -18,5 +18,5 @@ adios_span = false
 adios_memory_selection = false
 mesh_type = "image"
 precision = "Float32"
-backend = "CPU"
-kernel_language = "KernelAbstractions"
+backend = "CUDA"
+kernel_language = "Plain"
