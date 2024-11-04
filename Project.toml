@@ -4,6 +4,8 @@ authors = ["William F Godoy <williamfgc@yahoo.com>"]
 version = "0.1.0"
 
 [deps]
+ADIOS2 = "e0ce9d3b-0dbd-416f-8264-ccca772f60ec"
+ADIOS2_jll = "44b1415a-b224-5c99-9168-ff4febb5f37f"
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
@@ -15,19 +17,21 @@ Profile = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 
-[compat]
-MPI = "0.20.22"
-TOML = "1.0.3"
-julia = "1.8"
+[weakdeps]
+AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 
 [extensions]
 AMDGPUExt = "AMDGPU"
 CUDAExt = "CUDA"
 
-[extras]
-AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
-CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+[compat]
+ADIOS2 = "1.2.1"
+ADIOS2_jll = "2.10.2"
+MPI = "0.20.22"
+TOML = "1.0.3"
+julia = "1.8"
 
-[weakdeps]
+[extras]
 AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"

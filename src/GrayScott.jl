@@ -21,16 +21,14 @@ GrayScott.main(["settings.json"])  # Run simulation with settings file
 """
 module GrayScott
 
-import MPI #, ADIOS2
+import MPI
+import ADIOS2
+
 using KernelAbstractions #, OffsetArrays
 
 # Include core simulation module
 include(joinpath("simulation", "Simulation.jl"))
 import .Simulation
-
-# Include I/O module
-#include(joinpath("simulation", "IO.jl"))
-#import .IO
 
 """
 Entry point for running GrayScott as an executable.
@@ -73,7 +71,7 @@ function main(args::Vector{String})
     rank = MPI.Comm_rank(comm)
 
     # Initialize ADIOS2 I/O stream for parallel output
-    #stream = IO.init(settings, mpi_cart_domain, fields)
+    stream = Simulation.IO.init(settings, mpi_cart_domain, fields)
 
     # Initialize simulation step counters
     restart_step::Int32 = 0
@@ -93,12 +91,12 @@ function main(args::Vector{String})
             end
 
             # Write visualization data
-            #IO.write_step!(stream, step, fields)
+            Simulation.IO.write_step!(stream, step, fields, settings)
         end
     end
 
     # Clean up I/O resources
-    #IO.close!(stream)
+    Simulation.IO.close!(stream)
 
     # Clean up simulation resources
     Simulation.finalize()
