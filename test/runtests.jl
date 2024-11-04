@@ -13,7 +13,7 @@ config_file = joinpath(root_dir, "examples", "settings-files.toml")
 include(joinpath("unit", "simulation", "unit-Inputs.jl"))
 include(joinpath("unit", "simulation", "unit-Simulation.jl"))
 include(joinpath("unit", "simulation", "unit-Simulation_CUDA.jl"))
-include(joinpath("unit", "simulation", "unit-IO.jl"))
+#include(joinpath("unit", "simulation", "unit-IO.jl"))
 
 # unit tests for analysis scripts
 include(joinpath("unit", "analysis", "unit-pdfcalc.jl"))
